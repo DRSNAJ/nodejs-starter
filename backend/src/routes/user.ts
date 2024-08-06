@@ -21,6 +21,7 @@ passport.use(new JwtStrategy(opts, async (jwt_payload, done) => {
     if (foundUser) {
         return done(null, foundUser);
     } else {
+        console.log('User not found in the database');
         return done(null, false, { message: 'User not found' });
     }
 }));
@@ -43,45 +44,51 @@ type userType = {
 router.get("/user/:userId", passport.authenticate('jwt', { session: false }), async (req, res) => {
     const authUser = new UserModel(req.user);
     if (authUser.user_id === req.params.userId) {
-        const user = await UserModel.findOne({user_id:req.params.userId});
+        console.log(`Authorized user ${authUser.user_id}`);
+        const user = await UserModel.findOne({ user_id: req.params.userId });
         res.json(user);
     } else {
+        console.log(`Unauthorized access attempt by user ${authUser.user_id} to user ${req.params.userId}`);
         res.statusCode = 401;
         res.send("You are not authorized to edit this user");
     }
 });
 
-router.put("/user/:userId",  passport.authenticate('jwt', { session: false }), async (req, res) => {
-    const reqUser: userType = req.body;
+router.put("/user/:userId", passport.authenticate('jwt', { session: false }), async (req, res) => {
+    // const reqUser: userType = req.body;
+    const reqUser = new UserModel(req.body);
     const authUser = new UserModel(req.user);
+    
     if (authUser.user_id === req.params.userId) {
-        
+        console.log(`Authorized user ${authUser.user_id} is updating user ${req.params.userId}`);
         try {
-            const replacedUser = await UserModel.replaceOne({user_id:req.params.userId}, {
+            await reqUser.hashPassword();
+            const replacedUser = await UserModel.replaceOne({ user_id: req.params.userId }, {
                 "username": reqUser.username,
                 "password": reqUser.password,
                 "user_id": req.params.userId,
             });
     
-            if (!(replacedUser.matchedCount && replacedUser.modifiedCount)){
+            if (!(replacedUser.matchedCount && replacedUser.modifiedCount)) {
+                console.log(`User ${req.params.userId} not found for update`);
                 res.statusCode = 404;
                 res.send('User Not Found');
             }
             else {
+                console.log(`User ${req.params.userId} successfully updated`);
                 res.send("User Successfully Updated");
             }
         
         } catch (error) {
-            console.error(error)
+            console.error(`Error updating user ${req.params.userId}:`, error);
             res.statusCode = 500;
             res.send('Internal Server Error');
         }
-
     } else {
+        console.log(`Unauthorized update attempt by user ${authUser.user_id} to user ${req.params.userId}`);
         res.statusCode = 401;
         res.send("You are not authorized to view this user");
     }
-    // query database based on jwt and update user information based on request
 });
 
 export default router;
