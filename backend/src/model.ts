@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { nanoid } from 'nanoid';
 interface IUser extends mongoose.Document {
+    user_id: String,
     username: String,
     password: String,
     printDetails: () => String,
@@ -9,6 +11,12 @@ interface IUser extends mongoose.Document {
 }
 
 const UserSchema = new mongoose.Schema<IUser>({
+    user_id: {
+        type: String,
+        required: true,
+        default: () => nanoid(7),
+        unique: true,
+    },
     username: { type: String, required: true },
     password: { type: String, required: true },
 });
