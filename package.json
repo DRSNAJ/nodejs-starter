@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "express": "^4.19.2",
-    "express-session": "^1.18.0",
-    "nanoid": "^5.0.7",
-    "passport": "^0.7.0",
-    "passport-local": "^1.0.0"
-  }
-}
