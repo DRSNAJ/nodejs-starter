@@ -1,30 +1,44 @@
 require("dotenv").config();
 
-import express from 'express';
+import express, { NextFunction } from 'express';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import bodyParser from 'body-parser';
 import cors from "cors"
 import connectToDb from './utils/db'
+import { v4 as uuidv4 } from 'uuid';
+import {logger, reqLogger} from './utils/logger';
 
 const app = express();
 
-console.log("Initializing middleware...");
+app.use((req, res, next) => {
+    req.log = {id: uuidv4()};
+    return next();
+});
+
+// app.all("*",(req, res, next) => {
+//     const reqId = uuidv4();
+// });
+
+logger.info("Initializing middleware...");
 app.use(cors());
-console.log("CORS enabled.");
+logger.info("CORS enabled.");
 app.use(bodyParser.json());
-console.log("JSON body parser enabled.");
+logger.info("JSON body parser enabled.");
 app.use(bodyParser.urlencoded({ extended: false }))
-console.log("URL-encoded body parser enabled.");
+logger.info("URL-encoded body parser enabled.");
 
-console.log("Initializing routes...");
+logger.info("Initializing routes...");
 app.use(authRoutes);
-console.log("Auth routes initialized.");
+logger.info("Auth routes initialized.");
 app.use(userRoutes);
-console.log("User routes initialized.");
+logger.info("User routes initialized.");
 
-console.log("Connecting to the database...");
+logger.info("Connecting to the database...");
 connectToDb();
 
+
+  
+
 const envPort = process.env.PORT;
-app.listen(envPort, () => console.log(`Express app listening on port: ${envPort}`));
+app.listen(envPort, () => logger.info(`Express app listening on port: ${envPort}`));
